@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Mi Perfil') }}{% endblock %}
+
+{% block head_content %}
+<style>
+    /* Estilos para la tarjeta de detalles del perfil */
+    .profile-details-container {
+        padding: 2rem;
+        background-color: var(--bs-tertiary-bg);
+        border-radius: 12px;
+        border: 1px solid var(--bs-border-color);
+    }
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 4px solid var(--bs-warning);
+    }
+    /* Estilos para las secciones de información */
+    .section-title {
+        color: var(--bs-warning);
+        font-weight: bold;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--bs-warning);
+    }
+    .detail-item {
+        margin-bottom: 1rem;
+    }
+    .detail-item strong {
+        display: block;
+        color: var(--bs-secondary);
+        font-weight: 600;
+        font-size: 0.9em;
+    }
+    .detail-item span {
+        display: block;
+        font-size: 1.05em;
+    }
+
+    /* Estilos para la sección de botones de acción */
+    .actions-section {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px dashed var(--bs-border-color);
+    }
+    .actions-section h3 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+    .dashboard-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .dashboard-link {
+        display: flex;
+        align-items: center;
+        padding: 0.85rem 1.25rem;
+        background-color: var(--bs-secondary-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--bs-body-color);
+        font-weight: 500;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .dashboard-link:hover {
+        transform: translateY(-2px);
+    }
+    .dashboard-link i {
+        font-size: 1.1em;
+        margin-right: 1rem;
+        width: 24px;
+        text-align: center;
+        color: var(--bs-warning);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-9">
+            <div class="profile-details-container">
+                <!-- CABECERA DEL PERFIL -->
+                <div class="dashboard-header">
+                    <img src="{{ url_for('static', filename=user.avatar_url if user.avatar_url else 'uploads/avatars/default.png') }}" alt="{{ _('Avatar de %(username)s', username=user.username) }}" class="profile-avatar">
+                    <h1 class="h3 mt-3">{{ _('Bienvenido, %(username)s', username=user.username) }}</h1>
+                    <p class="text-muted">@{{ user.username }}</p>
+                </div>
+
+                <!-- SECCIONES DE INFORMACIÓN DETALLADA -->
+                {% set sections = {
+                    _("Información de Contacto"): [
+                        (_("Teléfono"), user.telefono), (_("Email"), user.email), (_("Empresa"), user.empresa),
+                        (_("Dirección (Provincia)"), user.direccion), (_("Rol"), user.role), (_("Cédula"), user.cedula)
+                    ],
+                    _("Información Adicional"): [
+                        (_("Fecha de Registro"), user.fecha_registro.strftime('%d/%m/%Y %H:%M') if user.fecha_registro else None),
+                        (_("Fecha de Cumpleaños"), user.fecha_cumpleanos.strftime('%d/%m/%Y') if user.fecha_cumpleanos else None)
+                    ],
+                    _("Información de Salud"): [
+                        (_("Tipo de Sangre"), user.tipo_sangre), (_("Póliza"), user.poliza), (_("Aseguradora"), user.aseguradora),
+                        (_("Alergias"), user.alergias), (_("Enfermedades Crónicas"), user.enfermedades_cronicas)
+                    ],
+                    _("Contacto de Emergencia"): [
+                        (_("Nombre"), user.nombre_emergencia), (_("Teléfono"), user.telefono_emergencia)
+                    ]
+                } %}
+
+                {% for title, items in sections.items() %}
+                    <h4 class="section-title">{{ title }}</h4>
+                    <div class="row">
+                        {% for label, value in items %}
+                            {% if value %}
+                            <div class="col-md-6 detail-item">
+                                <strong>{{ label }}:</strong>
+                                <span>{{ value }}</span>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <!-- SECCIÓN DE BOTONES DE ACCIÓN -->
+                <div class="actions-section">
+                    <div id="personal-actions-section">
+                        <h3>{{ _('Acciones Personales') }}</h3>
+                        <div class="dashboard-list">
+                            <a href="{{ url_for('perfil.editar_perfil') }}" class="dashboard-link">
+                                <i class="fas fa-user-edit"></i>
+                                <span>{{ _('Editar mi Información') }}</span>
+                            </a>
+                            <a href="{{ url_for('perfil.change_password') }}" class="dashboard-link">
+                                <i class="fas fa-key"></i>
+                                <span>{{ _('Cambiar Contraseña') }}</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    {% if session.role == 'Superuser' %}
+                    <div class="superuser-section mt-4 pt-4">
+                        <h3>{{ _('Panel de Superusuario') }}</h3>
+                        <div class="dashboard-list">
+                            <a href="{{ url_for('contactos.ver_contactos') }}" class="dashboard-link">
+                                <i class="fas fa-address-book"></i>
+                                <span>{{ _('Ver Contactos') }}</span>
+                            </a>
+                            <a href="{{ url_for('btns.crear_btns') }}" class="dashboard-link">
+                                <i class="fas fa-toggle-on"></i>
+                                <span>{{ _('Botones Flotantes') }}</span>
+                            </a>
+                            <a href="{{ url_for('contactos.admin_manage_roles') }}" class="dashboard-link">
+                                <i class="fas fa-user-shield"></i>
+                                <span>{{ _('Administrar Roles') }}</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

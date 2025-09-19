@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Detalles de Contacto') }}{% endblock %}
+
+{% block head_content %}
+<style>
+    .hidden-for-capture { visibility: hidden !important; }
+
+    .fab-container-actions {
+        position: fixed; bottom: 20px; right: 20px; z-index: 1050;
+        display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .fab-button {
+        width: 50px; height: 50px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; transition: all 0.3s ease; text-decoration: none;
+    }
+    .fab-button:hover { transform: scale(1.1); filter: brightness(90%); }
+    .fab-button-vcard { background-color: var(--bs-info); color: var(--bs-light); }
+    .fab-button-jpg { background-color: var(--bs-primary); color: var(--bs-light); }
+    .fab-button-pdf { background-color: var(--bs-danger); color: var(--bs-light); }
+
+    .contact-detail-card {
+        background-color: var(--card-bg);
+        padding: 30px; margin-top: 30px; margin-bottom: 30px;
+    }
+    .profile-avatar {
+        width: 120px; height: 120px; object-fit: cover;
+        border-radius: 50%; border: 4px solid var(--bs-warning);
+    }
+    .section-title {
+        color: var(--bs-warning); font-weight: bold;
+        margin-top: 25px; margin-bottom: 15px;
+        border-bottom: 2px solid var(--bs-warning); padding-bottom: 5px;
+    }
+    .detail-item { margin-bottom: 10px; }
+    .detail-item strong { color: var(--bs-secondary); font-weight: 600; display: block; }
+    .detail-item span { color: var(--bs-body-color); display: block; font-size: 1.05em; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-9">
+            <div class="contact-detail-card">
+                <div class="text-center mb-4">
+                    <img src="{{ avatar_url }}" alt="{{ _('Avatar de %(username)s', username=user.username) }}" class="profile-avatar mb-3">
+                    <h3 class="text-warning">{{ user.nombre | title }} {{ user.primer_apellido | title}} {{ user.segundo_apellido | title if user.segundo_apellido  else '' }}</h3>
+                    <p class="text-muted">@{{ user.username }}</p>
+                </div>
+
+                <!-- Bucle para mostrar la información en secciones -->
+                {% set sections = {
+                    _("Información de Contacto"): [
+                        (_("Teléfono"), user.telefono), (_("Email"), user.email), (_("Empresa"), user.empresa),
+                        (_("Dirección (Provincia)"), user.direccion), (_("Rol"), user.role), (_("Cédula"), user.cedula)
+                    ],
+                    _("Información Adicional"): [
+                        (_("Fecha de Registro"), user.fecha_registro.strftime('%d/%m/%Y %H:%M') if user.fecha_registro else None),
+                        (_("Última Actualización"), user.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') if user.fecha_actualizacion else None),
+                        (_("Fecha de Cumpleaños"), user.fecha_cumpleanos.strftime('%d/%m/%Y') if user.fecha_cumpleanos else None),
+                        (_("Tipo de Sangre"), user.tipo_sangre), (_("Póliza"), user.poliza), (_("Aseguradora"), user.aseguradora),
+                        (_("Actividad"), user.actividad), (_("Capacidad"), user.capacidad), (_("Participación"), user.participacion)
+                    ],
+                    _("Notas Médicas"): [
+                        (_("Alergias"), user.alergias), (_("Enfermedades Crónicas"), user.enfermedades_cronicas)
+                    ],
+                    _("Contacto de Emergencia"): [
+                        (_("Nombre"), user.nombre_emergencia), (_("Teléfono de Emergencia"), user.telefono_emergencia)
+                    ]
+                } %}
+
+                {% for title, items in sections.items() %}
+                    <h4 class="section-title">{{ title }}</h4>
+                    <div class="row">
+                        {% for label, value in items %}
+                            {% if value %}
+                            <div class="col-md-6 detail-item">
+                                <strong>{{ label }}:</strong>
+                                <span>{{ value }}</span>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <div class="action-buttons text-center mt-4">
+                    {% if current_role in ['Superuser', 'Administrador'] or current_user_id == user.id %}
+                        <a href="{{ url_for('contactos.editar_contacto', user_id=user.id) }}" class="btn btn-warning me-2"><i class="fas fa-edit me-1"></i> {{ _('Editar') }}</a>
+                    {% endif %}
+                    {% if current_role == 'Superuser' %}
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"><i class="fas fa-trash-alt me-1"></i> {{ _('Eliminar') }}</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Confirmar Eliminación') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {{ _('¿Estás seguro de que quieres eliminar a %(nombre)s? Esta acción no se puede deshacer.', nombre=user.nombre) }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancelar') }}</button>
+                <form action="{{ url_for('contactos.eliminar_contacto', user_id=user.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">{{ _('Eliminar') }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones Flotantes -->
+<div class="fab-container-actions">
+    {% if current_role in ['Superuser', 'Administrador'] %}
+    <a href="{{ url_for('contactos.exportar_vcard', user_id=user.id) }}" class="fab-button fab-button-vcard" title="{{ _('Exportar vCard') }}"><i class="fas fa-address-card"></i></a>
+    {% endif %}
+    <button id="exportToJpg" class="fab-button fab-button-jpg" title="{{ _('Exportar como JPG') }}"><i class="fas fa-image"></i></button>
+    <button id="exportToPdf" class="fab-button fab-button-pdf" title="{{ _('Exportar como PDF') }}"><i class="fas fa-file-pdf"></i></button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contentToCapture = document.querySelector('.contact-detail-card');
+    const elementsToHide = document.querySelectorAll('.fab-container-actions, #back-fab');
+    const actionButtonsInCard = contentToCapture.querySelector('.action-buttons');
+
+    async function captureContent(format) {
+        elementsToHide.forEach(c => c.classList.add('hidden-for-capture'));
+        if (actionButtonsInCard) actionButtonsInCard.classList.add('hidden-for-capture');
+        
+        try {
+            const canvas = await html2canvas(contentToCapture, { scale: 2, useCORS: true, scrollY: -window.scrollY });
+            if (format === 'jpg') {
+                const link = document.createElement('a');
+                link.download = 'detalle_contacto.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            } else if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('detalle_contacto.pdf');
+            }
+        } catch (err) {
+            console.error('Error durante la exportación:', err);
+        } finally {
+            elementsToHide.forEach(c => c.classList.remove('hidden-for-capture'));
+            if (actionButtonsInCard) actionButtonsInCard.classList.remove('hidden-for-capture');
+        }
+    }
+
+    document.getElementById('exportToJpg').addEventListener('click', () => captureContent('jpg'));
+    document.getElementById('exportToPdf').addEventListener('click', () => captureContent('pdf'));
+});
+</script>
+{% endblock %}

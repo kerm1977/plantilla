@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Crear Acerca de Nosotros{% endblock %}
+
+{% block head_content %}
+    <style>
+        .fab-container-save {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .fab-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            border: none;
+        }
+        .fab-button:hover {
+            transform: scale(1.05);
+            filter: brightness(90%);
+        }
+        .fab-button-save {
+            background-color: var(--bs-warning);
+            color: var(--bs-dark);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1 class="text-center mb-5">Crear Sección "Acerca de Nosotros"</h1>
+
+        <div class="p-4" style="background-color: var(--card-bg);">
+            <form method="POST" enctype="multipart/form-data" id="createAboutUsForm">
+                <div class="mb-4">
+                    <label for="logo" class="form-label">Imagen del Logo (JPG, PNG)</label>
+                    <input type="file" class="form-control" id="logo" name="logo" accept=".jpg, .jpeg, .png">
+                    <small class="form-text text-muted">Selecciona una imagen para el logo.</small>
+                    <small class="form-text text-danger">Evite caracteres especiales en el nombre del archivo.</small>
+                </div>
+                <div class="mb-4">
+                    <label for="logo_info" class="form-label">Información del Logo</label>
+                    <textarea class="form-control" id="logo_info" name="logo_info" rows="3" placeholder="Describe brevemente el logo..."></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="title" class="form-label">Título</label>
+                    <input type="text" class="form-control" id="title" name="title" placeholder="Ej: Nuestra Historia">
+                </div>
+                <div class="mb-4">
+                    <label for="editor" class="form-label">Detalle (Contenido Principal)</label>
+                    <textarea name="detail" id="editor"></textarea>
+                </div>
+                <button type="submit" class="d-none">Crear Sección</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Botón flotante para guardar cambios -->
+    <div class="fab-container-save">
+        <a href="#" class="fab-button fab-button-save" title="Crear Sección" onclick="document.getElementById('createAboutUsForm').submit(); return false;">
+            <i class="fas fa-save"></i>
+        </a>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        CKEDITOR.replace('editor', { language: 'es' });
+    });
+</script>
+{% endblock %}

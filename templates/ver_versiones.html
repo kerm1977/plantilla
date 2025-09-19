@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Ver Versiones{% endblock %}
+
+{% block head_content %}
+{# Estilos específicos para esta página que no están en main.css o sobrescriben base.html #}
+<style>
+    /* Estilos para el contenedor principal de todos los FABs de acción (Crear, Editar, Eliminar) */
+    .fab-main-actions-container {
+        position: fixed;
+        bottom: 75px; /* Distancia desde abajo, para que el FAB de crear esté a 20px */
+        right: 20px; /* Distancia desde la derecha */
+        z-index: 1000; /* Asegura que esté por encima de otros elementos */
+        display: flex;
+        flex-direction: column; /* Apila los elementos verticalmente */
+        align-items: flex-end; /* Alinea los items a la derecha */
+        gap: 10px; /* Espacio entre los botones apilados */
+    }
+
+    /* Estilos comunes para todos los botones FAB de acción (Crear, Editar, Eliminar) */
+    .fab-button-common {
+        width: 60px; /* Tamaño del botón idéntico al de crear/volver */
+        height: 60px; /* Tamaño del botón idéntico */
+        border-radius: 50%; /* Hacerlo circular */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem; /* Tamaño del icono */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        border: none; /* Asegurar que no haya borde */
+    }
+
+    .fab-button-common:hover {
+        transform: scale(1.05); /* Pequeño efecto al pasar el ratón */
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Sombra al pasar el ratón */
+    }
+
+    /* Estilos específicos para el botón flotante (FAB) de crear */
+    .fab-button-create {
+        background-color: #ffc107; /* Color de fondo warning (naranja) */
+        color: #212529; /* Color de texto oscuro (negro) para contraste */
+    }
+    .fab-button-create:hover {
+        background-color: #e0a800; /* Tono más oscuro al pasar el ratón */
+    }
+
+    /* Estilos específicos para el botón flotante (FAB) de editar */
+    .fab-button-edit {
+        background-color: #007bff; /* Azul (primary) */
+        color: white; /* Blanco */
+    }
+    .fab-button-edit:hover {
+        background-color: #0056b3; /* Azul más oscuro */
+    }
+
+    /* Estilos específicos para el botón flotante (FAB) de eliminar */
+    .fab-button-delete {
+        background-color: #dc3545; /* Rojo (danger) */
+        color: white; /* Blanco */
+    }
+    .fab-button-delete:hover {
+        background-color: #c82333; /* Rojo más oscuro */
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">Lista de Versiones</h1>
+
+   <hr>
+
+    <p class="text-justify">Es necesario dejar claro que todas las vistas de este sitio son libres de sobrecarga gráfica, eliminando lo máximo que se pueda imagenes, videos y efectos css pesados para evitar el consumo de datos excesivo pensando principalmente en servicios móviles pre-pago. Esta área muestra las versiones de la aplicación de La Tribu de Los Libres. Antes es necesario indicar que la construcción de este sitio fue realizado con el lenguaje PYTHON y el marco de trabajo Flask, Javascript, CSS, html5 principalmente, además cuenta con un hashing criptográfico que utiliza el algoritmo Blowfish resistente a ataques de fuerza bruta. </p>
+
+   <p class="text-justify">Aun hay áreas si terminar y es probable que se encuentren varios fallos en el diseño y respuesta del backend por esa razón se va a clasificar con un nombre, cada versión según su fortaleza y funcionalidad como una forma de identificar los cambios, mejoras y errores que van apareciendo con el tiempo. Los nombres de cada versión tienen un nombre de aves en ingles  solo para identificar cada modificación de una sección o área especifica. Además la versión tendrá al menos 3  variantes más antes de brincar a la 1.2 y así sucesivamente hasta la 1.9 antes de pasar a la versión 2.0.</p>
+
+    <p class="text-justify"> Versión 1.0 Canario: Son aves pequeñas, delicadas y criadas principalmente por su canto, convirtiéndolas en aves muy frágiles pero prácticas como criatura. Así mismo estamos ante una aplicación aún delicada con limitantes pero sencilla de asimilar.</p>
+
+    <hr class="mt-5 mb-5">
+
+    {% if versiones %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"> {# Esto creará una cuadrícula de tarjetas #}
+        {% for version in versiones %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ version.nombre_version }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Versión: {{ version.numero_version }}</h6>
+                    <p class="card-text">
+                        <strong>Provincia:</strong> {{ version.provincia if version.provincia else 'N/A' }}<br>
+                        <strong>Fecha de Creación:</strong>
+                        <span class="utc-datetime" data-utc="{{ version.fecha_creacion.isoformat() }}">
+                            {{ version.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S') }}
+                        </span>
+                    </p>
+                    <div class="mt-auto"> {# Para empujar el botón "Ver Más" hacia abajo #}
+                        <a href="{{ url_for('version.detalle_version', version_id=version.id) }}" class="btn btn-info btn-sm w-100">Ver Más</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="confirmDeleteModal{{ version.id }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel{{ version.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmDeleteModalLabel{{ version.id }}">Confirmar Eliminación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        ¿Estás seguro de que deseas eliminar la versión "{{ version.nombre_version }}" (Número: {{ version.numero_version }})? Esta acción no se puede deshacer.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <form action="{{ url_for('version.eliminar_version', version_id=version.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center">No hay versiones registradas aún.</p>
+    {% endif %}
+</div>
+
+{# Contenedor principal para los FABs de acción (Crear, Editar, Eliminar) #}
+<div class="fab-main-actions-container">
+    {% if session.get('role') == 'Superuser' %}
+    {# Botón flotante para editar la primera versión (puedes ajustar esta lógica si necesitas editar una versión específica) #}
+    {% if versiones %} {# Solo si hay versiones para editar #}
+    <a href="{{ url_for('version.editar_version', version_id=versiones[0].id) }}" class="fab-button-common fab-button-edit" title="Editar Primera Versión">
+        <i class="fas fa-edit"></i>
+    </a>
+    {# Botón flotante para eliminar la primera versión (puedes ajustar esta lógica si necesitas eliminar una versión específica) #}
+    <a href="#" class="fab-button-common fab-button-delete" title="Eliminar Primera Versión" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ versiones[0].id }}">
+        <i class="fas fa-trash-alt"></i>
+    </a>
+    {% endif %}
+    {# Botón flotante para crear versión #}
+    <a href="{{ url_for('version.crear_version') }}" class="fab-button-common fab-button-create" title="Crear Nueva Versión">
+        <i class="fas fa-plus" style="color: black;"></i> {# Icono de más en negro #}
+    </a>
+    {% endif %}
+</div>
+{% endblock %}

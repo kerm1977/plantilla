@@ -1,0 +1,35 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div id="flash-messages-container">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<style>
+    /* Estilo para que los mensajes flash se desvanezcan paulatinamente */
+    .alert {
+        transition: opacity 1s ease-in-out; /* Controla la duración del desvanecimiento (1 segundo) */
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Selecciona todos los mensajes de alerta
+        var alerts = document.querySelectorAll('.alert');
+
+        // Itera sobre cada alerta y establece un temporizador para que desaparezca
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                // Usa Bootstrap's dismiss para cerrar la alerta, lo que activará la transición CSS
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 4000); // 6000 milisegundos = 6 segundos
+        });
+    });
+</script>

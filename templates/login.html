@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Iniciar Sesión') }}{% endblock %}
+
+{% block head_content %}
+<style>
+    .login-card {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .oauth-divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        color: var(--bs-secondary);
+        margin: 25px 0;
+    }
+    .oauth-divider::before,
+    .oauth-divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    .oauth-divider:not(:empty)::before { margin-right: .25em; }
+    .oauth-divider:not(:empty)::after { margin-left: .25em; }
+
+    .social-icons-container {
+        display: flex;
+        justify-content: center;
+        gap: 25px;
+        margin-top: 15px;
+    }
+    .social-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        color: #fff;
+        transition: transform 0.2s ease-in-out;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    .social-icon:hover { transform: scale(1.1); }
+    .social-icon.github { background-color: #333; }
+    .social-icon.google { background-color: #DB4437; }
+    .social-icon.facebook { background-color: #4267B2; }
+
+    .forgot-password-link {
+        color: var(--bs-secondary);
+        text-decoration: none;
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="login-card p-4 mt-5">
+            <h2 class="text-center mb-4">{{ _('Iniciar Sesión') }}</h2>
+            
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="mb-3">
+                    <label for="username_or_email" class="form-label">{{ _('Usuario o Correo') }}</label>
+                    <input type="text" class="form-control" id="username_or_email" name="username_or_email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">{{ _('Contraseña') }}</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                    <label class="form-check-label" for="remember_me">{{ _('Mantener sesión iniciada') }}</label>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-warning">{{ _('Iniciar Sesión') }}</button>
+                </div>
+            </form>
+
+            <div class="text-center mt-4 oauth-divider">{{ _('o') }}</div>
+
+            <div class="social-icons-container">
+                <!-- Descomentar para activar OAuth -->
+                <!--
+                <a href="{{ url_for('oauth_bp.login', provider='github') }}" class="social-icon github"><i class="fab fa-github"></i></a>
+                <a href="{{ url_for('oauth_bp.login', provider='google') }}" class="social-icon google"><i class="fab fa-google"></i></a>
+                <a href="{{ url_for('oauth_bp.login', provider='facebook') }}" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>
+                -->
+            </div>
+
+            <p class="text-center mt-4">{{ _('¿No tienes una cuenta? ') }}<a href="{{ url_for('register') }}">{{ _('Regístrate') }}</a></p>
+            
+            <div class="text-center mt-3">
+                <a href="{{ url_for('request_password_reset') }}" class="forgot-password-link">{{ _('¿Olvidaste tu contraseña?') }}</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+    if (togglePassword && password) {
+        togglePassword.addEventListener('click', function () {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
+});
+</script>
+{% endblock %}

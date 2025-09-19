@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ _('Ver Contactos') }}{% endblock %}
+
+{% block head_content %}
+<style>
+    /* Estilos para el contenedor de los botones flotantes */
+    .fab-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        gap: 10px; /* Espacio entre botones flotantes */
+    }
+
+    .fab-button {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .fab-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Estilos para las tarjetas de contacto (Vista Grid) */
+    .contact-card .contact-detail {
+        margin-bottom: 0.5rem;
+    }
+
+    .contact-card .contact-detail strong {
+        display: block;
+        font-size: 0.9em;
+    }
+
+    .contact-card .contact-detail span {
+        display: block;
+        font-size: 1em;
+    }
+    
+    /* Estilos para el selector de vista */
+    .view-switcher {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .view-switcher .btn {
+        margin: 0 5px;
+    }
+    
+    .view-switcher .btn.active {
+        background-color: var(--bs-warning);
+        border-color: var(--bs-warning);
+        color: var(--bs-dark);
+    }
+    [data-theme="dark"] .view-switcher .btn.active {
+        color: var(--bs-dark);
+    }
+
+
+    /* Ocultar vistas por defecto para evitar parpadeo */
+    #grid-view, #list-view {
+        display: none;
+    }
+
+    /* --- VISTA DE LISTA (ESTILO ver_caminatas) --- */
+    #list-view .contact-list-item {
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        margin-bottom: 0.75rem;
+    }
+    #list-view .contact-list-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    #list-view .contact-list-card {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 0.5rem;
+        background-color: transparent;
+    }
+    #list-view .contact-list-avatar-wrapper {
+        width: 60px;
+        height: 60px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        margin-right: 1rem;
+        overflow: hidden;
+    }
+    #list-view .contact-list-avatar {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    #list-view .contact-list-body {
+        flex-grow: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+    #list-view .contact-list-info {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0 1rem;
+    }
+    #list-view .contact-list-name {
+        grid-column: 1 / -1; /* Ocupa todas las columnas */
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* === INICIO: CORRECCIÓN DE COLOR DE TEXTO === */
+    #list-view .contact-list-detail {
+        font-size: 0.9rem;
+        color: var(--bs-secondary-text-emphasis, #6c757d); /* Color base para tema claro */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    /* Override para el tema oscuro para asegurar visibilidad */
+    [data-theme="dark"] #list-view .contact-list-detail {
+        color: var(--dark-primary-text, #c9d1d9);
+    }
+    /* Override para el tema sepia para consistencia */
+    [data-theme="sepia"] #list-view .contact-list-detail {
+        color: var(--sepia-text, #433422);
+        opacity: 0.9;
+    }
+    /* === FIN: CORRECCIÓN DE COLOR DE TEXTO === */
+
+    #list-view .contact-list-actions {
+        flex-shrink: 0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #list-view .contact-list-info {
+            grid-template-columns: 1fr; /* Una columna en pantallas pequeñas */
+        }
+    }
+    @media (max-width: 576px) {
+        #list-view .contact-list-body {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        #list-view .contact-list-info {
+            width: 100%;
+        }
+        #list-view .contact-list-actions {
+            width: 100%;
+            text-align: right;
+            margin-top: 0.5rem;
+        }
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-11 col-lg-10">
+            <div class="contact-list-container p-4 rounded-3">
+                <div class="text-center mb-4">
+                    <h2 class="card-title text-warning">{{ _('Lista de Contactos') }}</h2>
+                    {% if user_count is defined %}
+                        <p class="text-muted mb-0">
+                            {% if search_query %}
+                                {{ _('Se encontraron %(user_count)s usuarios para "%(search_query)s"', user_count=user_count, search_query=search_query) }}
+                            {% else %}
+                                {{ _('%(user_count)s usuarios registrados en total', user_count=user_count) }}
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                </div>
+
+                {# Formulario de búsqueda #}
+                <div class="mb-4">
+                    <form action="{{ url_for('contactos.ver_contactos') }}" method="GET" class="d-flex">
+                        <input type="hidden" name="view" id="view-input" value="{{ view_mode }}">
+                        <input type="text" class="form-control me-2" name="search_query" placeholder="{{ _('Buscar por nombre, teléfono, email, etc.') }}" value="{{ search_query if search_query else '' }}">
+                        <button type="submit" class="btn btn-outline-warning">{{ _('Buscar') }}</button>
+                        {% if search_query %}
+                            <a href="{{ url_for('contactos.ver_contactos', view=view_mode) }}" class="btn btn-outline-secondary ms-2">{{ _('Limpiar') }}</a>
+                        {% endif %}
+                    </form>
+                </div>
+
+                {# Selector de Vista #}
+                <div class="view-switcher mb-4">
+                    <button id="grid-view-btn" class="btn btn-outline-secondary" title="{{ _('Vista de Tarjetas') }}">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button id="list-view-btn" class="btn btn-outline-secondary" title="{{ _('Vista de Lista') }}">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+
+
+                {% if users %}
+                    {# Vista de Tarjetas (Grid) #}
+                    <div id="grid-view">
+                        {% for user in users %}
+                            <div class="contact-card border rounded p-3 mb-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <img src="{{ url_for('static', filename=user.avatar_url if user.avatar_url else 'uploads/avatars/default.png') }}"
+                                         alt="{{ _('Avatar de %(username)s', username=user.username) }}"
+                                         class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                    <div>
+                                        <h5 class="mb-0">{{ user.nombre | title }} {{ user.primer_apellido | title }}{% if user.segundo_apellido %} {{ user.segundo_apellido | title }}{% endif %}</h5>
+                                        <small class="text-muted">@{{ user.username }}</small>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6 col-md-4 contact-detail">
+                                        <strong>{{ _('Teléfono') }}:</strong>
+                                        <span>{{ user.telefono or 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4 contact-detail">
+                                        <strong>{{ _('Email') }}:</strong>
+                                        <span>{{ user.email or 'N/A' }}</span>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4 contact-detail">
+                                        <strong>{{ _('Cédula') }}:</strong>
+                                        <span>{{ user.cedula or 'N/A' }}</span>
+                                    </div>
+                                </div>
+                                <div class="text-end mt-3">
+                                    <a href="{{ url_for('contactos.ver_detalle', user_id=user.id) }}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-eye me-1"></i> {{ _('Ver más') }}
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {# Nueva Vista de Lista (Estilo Caminatas) #}
+                    <div id="list-view">
+                        {% for user in users %}
+                        <div class="contact-list-item">
+                            <div class="contact-list-card">
+                                <div class="contact-list-avatar-wrapper">
+                                    <img src="{{ url_for('static', filename=user.avatar_url if user.avatar_url else 'uploads/avatars/default.png') }}" alt="{{ _('Avatar de %(username)s', username=user.username) }}" class="contact-list-avatar">
+                                </div>
+                                <div class="contact-list-body">
+                                    <div class="contact-list-info">
+                                        <h5 class="contact-list-name">{{ user.nombre }} {{ user.primer_apellido }} {{ user.segundo_apellido if user.segundo_apellido else '' }}</h5>
+                                        <span class="contact-list-detail"><i class="fas fa-phone-alt me-2 text-muted"></i>{{ user.telefono or 'N/A' }}</span>
+                                        <span class="contact-list-detail"><i class="fas fa-id-card me-2 text-muted"></i>{{ user.cedula or 'N/A' }}</span>
+                                        <span class="contact-list-detail" style="grid-column: 1 / -1;"><i class="fas fa-envelope me-2 text-muted"></i>{{ user.email or 'N/A' }}</span>
+                                    </div>
+                                    <div class="contact-list-actions">
+                                        <a href="{{ url_for('contactos.ver_detalle', user_id=user.id) }}" class="btn btn-outline-warning btn-sm" title="{{ _('Ver Detalles') }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                {% else %}
+                    <div class="text-center py-4 border rounded">
+                        {% if search_query %}
+                            {{ _('No se encontraron contactos para la búsqueda "%(search_query)s".', search_query=search_query) }}
+                        {% else %}
+                            {{ _('No hay contactos para mostrar.') }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Botones Flotantes #}
+<div class="fab-container">
+    {% if current_role == 'Superuser' or current_role == 'Administrador' %}
+    <a href="{{ url_for('contactos.exportar_todos_excel') }}" class="btn btn-success fab-button" title="{{ _('Exportar a Excel') }}">
+        <i class="fas fa-file-excel"></i>
+    </a>
+    <a href="{{ url_for('register') }}" class="btn btn-warning fab-button" title="{{ _('Agregar nuevo contacto') }}">
+        <i class="fas fa-plus"></i>
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    const gridBtn = document.getElementById('grid-view-btn');
+    const listBtn = document.getElementById('list-view-btn');
+    const viewInput = document.getElementById('view-input');
+
+    function switchView(viewName) {
+        localStorage.setItem('contactViewMode', viewName); // Guardar en localStorage
+        if (viewName === 'list') {
+            gridView.style.display = 'none';
+            listView.style.display = 'block';
+            gridBtn.classList.remove('active');
+            listBtn.classList.add('active');
+            viewInput.value = 'list';
+        } else { // Default to grid
+            gridView.style.display = 'block';
+            listView.style.display = 'none';
+            listBtn.classList.remove('active');
+            gridBtn.classList.add('active');
+            viewInput.value = 'grid';
+        }
+    }
+
+    gridBtn.addEventListener('click', function() {
+        switchView('grid');
+    });
+
+    listBtn.addEventListener('click', function() {
+        switchView('list');
+    });
+
+    // --- Lógica para la vista inicial ---
+    const savedView = localStorage.getItem('contactViewMode');
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+
+    const initialView = viewParam || savedView || 'list'; // Prioridad: URL > LocalStorage > Default
+    switchView(initialView);
+});
+</script>
+{% endblock %}

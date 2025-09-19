@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<!-- AÑADIDO: Atributo lang dinámico y data-theme para manejar el tema con CSS y JS -->
+<html lang="{{ session.get('lang', 'es') }}" data-theme="{{ session.get('theme', 'light') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mi App Flask{% endblock %}</title>
+    
+    <!-- =================================================================
+    ARCHIVOS CSS EXTERNOS
+    ================================================================== -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    {% block head_content %}{% endblock %} {# Bloque para contenido adicional en el head #}
+
+    <!-- =================================================================
+    INICIO: BLOQUE DE ESTILOS CSS INTERNOS (TEMA GLOBAL)
+    ================================================================== -->
+    <style>
+/*
+* --------------------------------------------------------------------------
+* SECCIÓN 1: DEFINICIÓN DE VARIABLES DE TEMA
+* --------------------------------------------------------------------------
+*/
+
+        /* TEMA CLARO (POR DEFECTO) */
+        :root {
+            --bs-blue: #0d6efd; --bs-indigo: #6610f2; --bs-purple: #6f42c1; --bs-pink: #d63384;
+            --bs-red: #dc3545; --bs-orange: #fd7e14; --bs-yellow: #ffc107; --bs-green: #198754;
+            --bs-teal: #20c997; --bs-cyan: #0dcaf0; --bs-black: #000; --bs-white: #fff;
+            --bs-primary: var(--bs-blue); --bs-secondary: #6c757d; --bs-success: var(--bs-green);
+            --bs-info: var(--bs-cyan); --bs-warning: var(--bs-yellow); --bs-danger: var(--bs-red);
+            --bs-light: #f8f9fa; --bs-dark: #212529; --bs-body-bg: var(--bs-white);
+            --bs-body-color: var(--bs-dark); --bs-secondary-bg: #f8f9fa; --bs-tertiary-bg: #e9ecef;
+            --bs-border-color: #dee2e6; --bs-link-color: var(--bs-primary); --bs-link-hover-color: #0a58ca;
+            --navbar-bg: rgba(255, 193, 7, 0.8); --card-bg: var(--bs-white); --modal-bg: var(--bs-white);
+            --navbar-link-color: #000; --navbar-brand-color: #000;
+        }
+
+        /* TEMA OSCURO PASTEL (NUEVA PALETA VIBRANTE) */
+        [data-theme="dark"] {
+            --dark-bg: #0d1117;
+            --dark-surface: #161b22;
+            --dark-border: #30363d;
+            --dark-primary-text: #c9d1d9;
+            --dark-secondary-text: #8b949e;
+            --dark-heading-text: #58a6ff; /* Azul Pastel */
+            --dark-link-text: #f0a24f; /* Naranja Pastel */
+            --dark-link-hover: #ffc685;
+            --dark-accent-pink: #f778ba; /* Rosa Pastel */
+            --dark-accent-green: #3fb950; /* Verde Pastel */
+            --dark-accent-lavender: #d6b4f7; /* Lavanda Pastel */
+            
+            --bs-primary: var(--dark-heading-text); --bs-secondary: var(--dark-secondary-text);
+            --bs-success: var(--dark-accent-green); --bs-info: #58a6ff; --bs-warning: var(--dark-link-text);
+            --bs-danger: #f85149; --bs-light: var(--dark-primary-text); --bs-dark: var(--dark-bg);
+            --bs-body-bg: var(--dark-bg); --bs-body-color: var(--dark-primary-text);
+            --bs-secondary-bg: var(--dark-surface); --bs-tertiary-bg: #21262d;
+            --bs-border-color: var(--dark-border); --bs-link-color: var(--dark-link-text);
+            --bs-link-hover-color: var(--dark-link-hover); --navbar-bg: rgba(22, 27, 34, 0.85);
+            --card-bg: var(--dark-surface); --modal-bg: var(--dark-surface);
+            --navbar-link-color: var(--dark-accent-lavender); --navbar-brand-color: var(--dark-accent-pink);
+        }
+        
+        /* TEMA SEPIA */
+        [data-theme="sepia"] {
+            --sepia-bg: #f4e9d8; --sepia-text: #433422; --sepia-surface: #e9decc;
+            --sepia-border: #d3c5b4; --sepia-primary: #9d6b2c; --sepia-primary-hover: #7b5523;
+            --bs-primary: var(--sepia-primary); --bs-secondary: #a89d91; --bs-success: #5a8a5f;
+            --bs-info: #5f8ea4; --bs-warning: #c88f4b; --bs-danger: #b75d69;
+            --bs-light: #fdf6ec; --bs-dark: var(--sepia-text); --bs-body-bg: var(--sepia-bg);
+            --bs-body-color: var(--sepia-text); --bs-secondary-bg: var(--sepia-surface);
+            --bs-tertiary-bg: #e0d5c4; --bs-border-color: var(--sepia-border);
+            --bs-link-color: var(--sepia-primary); --bs-link-hover-color: var(--sepia-primary-hover);
+            --navbar-bg: rgba(211, 197, 180, 0.85); --card-bg: #fdf6ec; --modal-bg: #fdf6ec;
+            --navbar-link-color: var(--sepia-text); --navbar-brand-color: var(--sepia-primary);
+        }
+        
+/*
+* --------------------------------------------------------------------------
+* SECCIÓN 2: APLICACIÓN GLOBAL DE ESTILOS DE TEMA
+* --------------------------------------------------------------------------
+*/
+        body { background-color: var(--bs-body-bg); color: var(--bs-body-color); transition: background-color 0.3s ease, color 0.3s ease; }
+        
+        .card, .modal-content, .list-group-item, .accordion-item {
+            background-color: var(--card-bg) !important; color: var(--bs-body-color) !important;
+            border: 1px solid var(--bs-border-color) !important;
+        }
+        .form-control, .form-select {
+            background-color: var(--card-bg) !important; color: var(--bs-body-color) !important;
+            border: 1px solid var(--bs-border-color) !important;
+        }
+        [data-theme="dark"] .form-control, [data-theme="dark"] .form-select { background-color: var(--bs-tertiary-bg) !important; }
+        .table { --bs-table-bg: var(--card-bg); --bs-table-color: var(--bs-body-color); --bs-table-border-color: var(--bs-border-color); --bs-table-striped-bg: var(--bs-secondary-bg); }
+        a { color: var(--bs-link-color); } a:hover { color: var(--bs-link-hover-color); }
+        
+        .dropdown-menu { background-color: var(--bs-secondary-bg); }
+        .dropdown-item:hover { background-color: var(--bs-tertiary-bg); }
+
+        /* === INICIO CORRECCIÓN DEFINITIVA === */
+        [data-theme="dark"] .dropdown-menu {
+            --bs-dropdown-link-color: var(--dark-primary-text);
+        }
+        [data-theme="sepia"] .dropdown-menu {
+            --bs-dropdown-link-color: var(--sepia-text);
+        }
+        /* === FIN CORRECCIÓN DEFINITIVA === */
+
+
+        /* Overrides de texto y botones */
+        .text-primary { color: var(--bs-primary) !important; } .text-secondary { color: var(--bs-secondary) !important; }
+        .text-success { color: var(--bs-success) !important; } .text-danger { color: var(--bs-danger) !important; }
+        .text-warning { color: var(--bs-warning) !important; } .text-info { color: var(--bs-info) !important; }
+        [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6 { color: var(--dark-heading-text); }
+        
+        .btn-primary { background-color: var(--bs-primary); border-color: var(--bs-primary); color: var(--bs-light); }
+        .btn-secondary { background-color: var(--bs-secondary); border-color: var(--bs-secondary); }
+        .btn-success { background-color: var(--bs-success); border-color: var(--bs-success); }
+        .btn-danger { background-color: var(--bs-danger); border-color: var(--bs-danger); }
+        .btn-warning { background-color: var(--bs-warning); border-color: var(--bs-warning); color: var(--bs-dark); }
+        .btn-info { background-color: var(--bs-info); border-color: var(--bs-info); }
+        [data-theme="dark"] .btn-primary { color: #fff; }
+
+        [data-theme="dark"] .navbar-toggler-icon, [data-theme="sepia"] .navbar-toggler-icon { filter: invert(1); }
+        
+/*
+* --------------------------------------------------------------------------
+* SECCIÓN 3: ESTILOS GENERALES DE LAYOUT Y COMPONENTES
+* --------------------------------------------------------------------------
+*/
+        body { padding-top: 100px; }
+        @media (max-width: 767.98px) { body { margin-top: -150px; } }
+
+        /* === INICIO: ESTILOS NAVBAR CENTRALIZADOS (ACTUALIZADO) === */
+        .custom-navbar {
+            background-color: var(--navbar-bg) !important;
+            backdrop-filter: blur(5px);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1020;
+            border-bottom: 1px solid var(--bs-border-color);
+        }
+        .custom-navbar .navbar-brand { color: var(--navbar-brand-color) !important; }
+        .custom-navbar .nav-link { color: var(--navbar-link-color) !important; }
+        .custom-navbar google-cast-launcher { --d-cast-button-color: var(--navbar-link-color); }
+        
+        .navbar-brand-container {
+            display: flex;
+            align-items: center;
+        }
+
+        google-cast-launcher {
+            width: 40px;
+            height: 40px;
+            margin-left: 15px;
+            cursor: pointer;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .navbar .dropdown-menu { max-height: 70vh; overflow-y: auto; }
+        .navbar-collapse { transition: height 0.35s ease; }
+
+        @media (max-width: 991.98px) {
+            .navbar-collapse { max-height: 80vh; overflow-y: auto; }
+            .nav-item .nav-link .icon-only-mobile { display: inline-block; margin-right: 5px; }
+            .nav-item .nav-link .text-only-desktop { display: inline-block; }
+            .mobile-separator { border-top: 1px solid var(--bs-border-color); margin: 0.5rem 0; display: block; }
+        }
+
+        @media (min-width: 992px) {
+            .nav-item .nav-link .icon-only-mobile { display: none; }
+            .nav-item .nav-link .text-only-desktop { display: inline; }
+            .mobile-separator { display: none; }
+        }
+        /* === FIN: ESTilos NAVBAR CENTRALIZADOS === */
+        
+        /* === INICIO: ESTILOS BOTÓN FLOTANTE VOLVER ATRÁS === */
+        .back-fab-button {
+            position: fixed;
+            bottom: 75px;
+            left: 20px;
+            z-index: 1000;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .back-fab-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            color: var(--bs-dark) !important;
+        }
+        /* === FIN: ESTILOS BOTÓN FLOTANTE VOLVER ATRÁS === */
+
+        /* === INICIO: ESTILOS FOOTER === */
+        .footer {
+            background-color: var(--bs-secondary-bg);
+            border-top: 1px solid var(--bs-border-color);
+            transition: background-color 0.3s ease, border-top-color 0.3s ease;
+        }
+        [data-theme="dark"] .footer { background-color: var(--dark-surface); }
+        [data-theme="dark"] .footer .text-muted,
+        [data-theme="dark"] .footer a.text-muted { color: var(--dark-accent-lavender) !important; opacity: 0.9; }
+        [data-theme="dark"] .footer a.text-muted:hover { color: var(--bs-light) !important; }
+        /* === FIN: ESTILOS FOOTER === */
+
+        /* ... (otros estilos) ... */
+    </style>
+    <!-- =================================================================
+    FIN: BLOQUE DE ESTILOS CSS INTERNOS
+    ================================================================== -->
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <!-- ... (otras etiquetas meta) ... -->
+
+    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+</head>
+<body>
+
+    {% include "navbar.html" %}
+
+    <div class="container mt-4 main-content">
+        {% include "flash.html" %}
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- Botón Flotante Volver -->
+    <a href="javascript:history.back()" id="back-fab" class="back-fab-button btn btn-warning" title="Volver atrás">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+
+    <footer class="footer py-2 text-center">
+        <div class="container">
+            <span class="text-muted">Hecho con ❤️ Por La Tribu de Los Libres - 2025</span> - <a href="{{ url_for('version.ver_versiones') }}" class="text-muted">Versión {{ latest_version_number }}</a>
+        </div>
+    </footer>
+    <!-- ... (HTML del body) ... -->
+    
+    <!-- =================================================================
+    SCRIPTS
+    ================================================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    {% block scripts %}{% endblock %}
+
+    <script>
+        // Lógica PWA, Chromecast, Botones Flotantes y Cambio de Tema
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... (código JS existente para PWA, Cast, etc.)
+
+            // LÓGICA BOTÓN VOLVER
+            const backFab = document.getElementById('back-fab');
+            if (backFab && (window.location.pathname === '/' || window.location.pathname === '/home')) {
+                backFab.style.display = 'none';
+            }
+
+            // LÓGICA DE CAMBIO DE TEMA
+            const themeSwitchers = document.querySelectorAll('.theme-switcher');
+            const activeThemeIcon = document.getElementById('active-theme-icon');
+            const themes = ['light', 'dark', 'sepia'];
+            
+            function updateActiveIcon(theme) {
+                if (!activeThemeIcon) return;
+                let iconClass = 'fa-sun'; // default to light
+                if (theme === 'dark') iconClass = 'fa-moon';
+                if (theme === 'sepia') iconClass = 'fa-book-open';
+                activeThemeIcon.className = 'fas ' + iconClass;
+            }
+            
+            function setTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                updateActiveIcon(theme);
+                fetch("{{ url_for('change_theme', theme='dummy') }}".replace('dummy', theme), {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.reload(); // Recarga la página para aplicar el tema
+                    }
+                }).catch(console.error);
+            }
+            
+            // Este código maneja el clic en un solo botón
+            const singleThemeButton = document.getElementById('single-theme-button');
+            if (singleThemeButton) {
+                singleThemeButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const currentIndex = themes.indexOf(currentTheme);
+                    const nextIndex = (currentIndex + 1) % themes.length;
+                    const nextTheme = themes[nextIndex];
+                    setTheme(nextTheme);
+                });
+            }
+            updateActiveIcon(document.documentElement.getAttribute('data-theme'));
+            
+            // LÓGICA DE CAMBIO DE IDIOMA
+            const langSwitchers = document.querySelectorAll('.lang-switcher');
+            function setLang(lang) {
+                // Asume que tienes un endpoint '/set_lang' en Flask
+                fetch("{{ url_for('change_language', lang='dummy') }}".replace('dummy', lang), {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.reload(); // Recarga la página para aplicar el idioma
+                    }
+                }).catch(console.error);
+            }
+            
+            const singleLangButton = document.getElementById('single-lang-button');
+            if (singleLangButton) {
+                singleLangButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const currentLang = document.documentElement.getAttribute('lang');
+                    const nextLang = (currentLang === 'es') ? 'en' : 'es';
+                    setLang(nextLang);
+                });
+            }
+
+
+            // LÓGICA PARA CERRAR NAVBAR (MOVIDO DESDE NAVBAR.HTML)
+            const navbarCollapseElement = document.getElementById('navbarNav');
+            const navbarToggler = document.querySelector('.navbar-toggler');
+
+            document.addEventListener('click', function (event) {
+                if (navbarCollapseElement && navbarCollapseElement.classList.contains('show')) {
+                    const isClickInsideNavbar = navbarCollapseElement.contains(event.target) || navbarToggler.contains(event.target);
+                    const isClickInsideDropdownMenu = event.target.closest('.dropdown-menu');
+
+                    if (!isClickInsideNavbar && !isClickInsideDropdownMenu) {
+                        bootstrap.Collapse.getInstance(navbarCollapseElement).hide();
+                    }
+                }
+            });
+
+            if (navbarCollapseElement) {
+                navbarCollapseElement.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
+                    link.addEventListener('click', function() {
+                        if (navbarCollapseElement.classList.contains('show')) {
+                             bootstrap.Collapse.getInstance(navbarCollapseElement).hide();
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

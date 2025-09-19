@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurar Botones Flotantes{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Configurar Botones Flotantes</h2>
+    <p class="text-muted text-center">
+        Define el enlace, icono y visibilidad para los botones flotantes del sitio.
+    </p>
+
+    <form method="POST" action="{{ url_for('btns.crear_btns') }}">
+        <div class="row">
+            <!-- Configuración del Botón 1 (Izquierdo) -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-warning">
+                        <h4>Botón 1 (Izquierdo)</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="is_visible_one" name="is_visible_one" {% if config.button_one and config.button_one.is_visible %}checked{% endif %}>
+                            <label class="form-check-label" for="is_visible_one">Mostrar este botón</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="link_one" class="form-label">Enlace (URL)</label>
+                            <input type="text" class="form-control" id="link_one" name="link_one" value="{{ config.button_one.link if config.button_one else '' }}" placeholder="https://ejemplo.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="icon_one" class="form-label">Icono (Font Awesome)</label>
+                            <input type="text" class="form-control" id="icon_one" name="icon_one" value="{{ config.button_one.icon if config.button_one else '' }}" placeholder="ej. fa-home">
+                        </div>
+                        <div class="mb-3">
+                            <label for="visibility_state_one" class="form-label">Visibilidad</label>
+                            <select class="form-select" id="visibility_state_one" name="visibility_state_one">
+                                <option value="all" {% if config.button_one and config.button_one.visibility_state == 'all' %}selected{% endif %}>Todos</option>
+                                <option value="regular" {% if config.button_one and config.button_one.visibility_state == 'regular' %}selected{% endif %}>Usuarios logueados</option>
+                                <option value="superuser" {% if config.button_one and config.button_one.visibility_state == 'superuser' %}selected{% endif %}>Superusuarios</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuración del Botón 2 (Derecho) -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-warning">
+                        <h4>Botón 2 (Derecho)</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="is_visible_two" name="is_visible_two" {% if config.button_two and config.button_two.is_visible %}checked{% endif %}>
+                            <label class="form-check-label" for="is_visible_two">Mostrar este botón</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="link_two" class="form-label">Enlace (URL)</label>
+                            <input type="text" class="form-control" id="link_two" name="link_two" value="{{ config.button_two.link if config.button_two else '' }}" placeholder="https://ejemplo.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="icon_two" class="form-label">Icono (Font Awesome)</label>
+                            <input type="text" class="form-control" id="icon_two" name="icon_two" value="{{ config.button_two.icon if config.button_two else '' }}" placeholder="ej. fa-info-circle">
+                        </div>
+                        <div class="mb-3">
+                            <label for="visibility_state_two" class="form-label">Visibilidad</label>
+                            <select class="form-select" id="visibility_state_two" name="visibility_state_two">
+                                <option value="all" {% if config.button_two and config.button_two.visibility_state == 'all' %}selected{% endif %}>Todos</option>
+                                <option value="regular" {% if config.button_two and config.button_two.visibility_state == 'regular' %}selected{% endif %}>Usuarios logueados</option>
+                                <option value="superuser" {% if config.button_two and config.button_two.visibility_state == 'superuser' %}selected{% endif %}>Superusuarios</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center">
+            <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
