@@ -62,7 +62,8 @@
         <div class="login-card p-4 mt-5">
             <h2 class="text-center mb-4">{{ _('Iniciar Sesión') }}</h2>
             
-            <form method="POST" action="{{ url_for('login') }}">
+            <!-- Actualizado: action="url_for('auth.login')" -->
+            <form method="POST" action="{{ url_for('auth.login') }}">
                 <div class="mb-3">
                     <label for="username_or_email" class="form-label">{{ _('Usuario o Correo') }}</label>
                     <input type="text" class="form-control" id="username_or_email" name="username_or_email" required>
@@ -98,10 +99,12 @@
                 -->
             </div>
 
-            <p class="text-center mt-4">{{ _('¿No tienes una cuenta? ') }}<a href="{{ url_for('register') }}">{{ _('Regístrate') }}</a></p>
+            <!-- Actualizado: href="url_for('auth.register')" -->
+            <p class="text-center mt-4">{{ _('¿No tienes una cuenta? ') }}<a href="{{ url_for('auth.register') }}">{{ _('Regístrate') }}</a></p>
             
             <div class="text-center mt-3">
-                <a href="{{ url_for('request_password_reset') }}" class="forgot-password-link">{{ _('¿Olvidaste tu contraseña?') }}</a>
+                <!-- Actualizado: href="url_for('auth.request_password_reset')" -->
+                <a href="{{ url_for('auth.request_password_reset') }}" class="forgot-password-link">{{ _('¿Olvidaste tu contraseña?') }}</a>
             </div>
         </div>
     </div>

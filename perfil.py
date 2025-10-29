@@ -1,29 +1,46 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, current_app, send_from_directory
 from models import db, bcrypt, User
-from functools import wraps
+# Ya no se necesita 'wraps' aquí si no se define el decorador
 import os
-import shutil
-from werkzeug.utils import secure_filename
+# Ya no se necesita 'shutil'
+# Ya no se necesita 'secure_filename'
 from datetime import datetime
-import uuid # Importar para nombres de archivo únicos
+# Ya no se necesita 'uuid'
+
+# --- Importar utilidades ---
+from app_utils import login_required, save_upload
 
 perfil_bp = Blueprint('perfil', __name__)
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
-            flash('Por favor, inicia sesión para acceder a esta página.', 'info')
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
+# --- Decorador 'login_required' ELIMINADO ---
+# Se importa desde app_utils
 
 # --- RUTA PRINCIPAL DEL PERFIL (SOLO MUESTRA INFORMACIÓN) ---
 @perfil_bp.route('/')
 @login_required
 def perfil():
     user = User.query.get_or_404(session['user_id'])
-    return render_template('perfil.html', user=user)
+    
+    # Implementando Optimización #9: Mover lógica de plantilla a la ruta
+    sections = {
+        "Información de Contacto": [
+            ("Teléfono", user.telefono), ("Email", user.email), ("Empresa", user.empresa),
+            ("Dirección (Provincia)", user.direccion), ("Rol", user.role), ("Cédula", user.cedula)
+        ],
+        "Información Adicional": [
+            ("Fecha de Registro", user.fecha_registro.strftime('%d/%m/%Y %H:%M') if user.fecha_registro else None),
+            ("Fecha de Cumpleaños", user.fecha_cumpleanos.strftime('%d/%m/%Y') if user.fecha_cumpleanos else None)
+        ],
+        "Información de Salud": [
+            ("Tipo de Sangre", user.tipo_sangre), ("Póliza", user.poliza), ("Aseguradora", user.aseguradora),
+            ("Alergias", user.alergias), ("Enfermedades Crónicas", user.enfermedades_cronicas)
+        ],
+        "Contacto de Emergencia": [
+            ("Nombre", user.nombre_emergencia), ("Teléfono", user.telefono_emergencia)
+        ]
+    }
+    
+    return render_template('perfil.html', user=user, sections=sections)
 
 # --- NUEVA RUTA DEDICADA PARA EDITAR EL PERFIL ---
 @perfil_bp.route('/editar', methods=['GET', 'POST'])
@@ -69,16 +86,28 @@ def editar_perfil():
             else:
                 user.fecha_cumpleanos = None
 
-            # Lógica para actualizar el avatar
-            if 'avatar' in request.files:
-                avatar_file = request.files['avatar']
-                if avatar_file.filename != '':
-                    filename = secure_filename(avatar_file.filename)
-                    unique_filename = str(uuid.uuid4()) + os.path.splitext(filename)[1]
-                    upload_folder = current_app.config['UPLOAD_FOLDER']
-                    file_path = os.path.join(upload_folder, unique_filename)
-                    avatar_file.save(file_path)
-                    user.avatar_url = os.path.join('uploads', 'avatars', unique_filename).replace('\\', '/')
+            # --- Lógica para actualizar el avatar (Usando Optimización #6) ---
+            if 'avatar' in request.files and request.files['avatar'].filename != '':
+                saved_path = save_upload(request.files['avatar'], 'avatars')
+                if saved_path:
+                    # Opcional: Eliminar avatar anterior si no es el default
+                    if user.avatar_url and user.avatar_url != 'uploads/avatars/default.png':
+                        try:
+                            old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(user.avatar_url))
+                            if os.path.exists(old_path):
+                                os.remove(old_path)
+                        except Exception as e:
+                            current_app.logger.error(f"No se pudo eliminar el avatar anterior: {e}")
+                    
+                    user.avatar_url = saved_path
+                else:
+                    # save_upload falló (ej. tipo de archivo)
+                    # Renderizar de nuevo la plantilla de edición
+                    return render_template('editar_perfil.html', 
+                                           user=user, 
+                                           provincia_opciones=provincia_opciones, 
+                                           tipo_sangre_opciones=tipo_sangre_opciones)
+
 
             db.session.commit()
             flash('¡Perfil actualizado con éxito!', 'success')
@@ -93,11 +122,17 @@ def editar_perfil():
 @perfil_bp.route('/change_password', methods=['GET', 'POST'])
 @login_required
 def change_password():
+    # TODO: Implementar WTForms (ChangePasswordForm)
     if request.method == 'POST':
         current_password = request.form['current_password']
         new_password = request.form['new_password']
         confirm_password = request.form['confirm_password']
         user = User.query.get(session['user_id'])
+        
+        if not user.password:
+            flash('No puedes cambiar la contraseña de una cuenta creada con un proveedor externo (ej. Google).', 'danger')
+            return redirect(url_for('perfil.perfil'))
+
         if not bcrypt.check_password_hash(user.password, current_password):
             flash('La contraseña actual es incorrecta.', 'danger')
         elif new_password != confirm_password:
@@ -111,4 +146,3 @@ def change_password():
     return render_template('change_password.html')
 
 # (El resto de tus rutas como backup_database, etc. pueden permanecer aquí sin cambios)
-

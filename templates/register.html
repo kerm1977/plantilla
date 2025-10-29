@@ -17,9 +17,13 @@
     <div class="col-md-8 col-lg-7">
         <div class="register-card p-4 mt-5">
             <h2 class="text-center text-warning mb-4">{{ _('Registro de Usuario') }}</h2>
-            <form method="POST" action="{{ url_for('register') }}" enctype="multipart/form-data">
+            
+            <!-- Actualizado: action="url_for('auth.register')" -->
+            <form method="POST" action="{{ url_for('auth.register') }}" enctype="multipart/form-data">
                 
                 <p class="text-muted text-center">{{ _('Los campos marcados con * son obligatorios.') }}</p>
+                <p class="text-muted text-center">{{ _('Podrás añadir información de salud y emergencia en tu perfil después de registrarte.') }}</p>
+
 
                 <div class="mb-3">
                     <label for="avatar" class="form-label">{{ _('Avatar (Opcional)') }}</label>
@@ -38,8 +42,8 @@
                     <input type="text" class="form-control" id="segundo_apellido" name="segundo_apellido" value="{{ request.form.get('segundo_apellido', '') | title }}">
                 </div>
                 <div class="mb-3">
-                    <label for="email" class="form-label">{{ _('Email *') }}</label>
-                    <input type="email" class="form-control" id="email" name="email" value="{{ request.form.get('email', '') }}" required>
+                    <label for="email" class="form-label">{{ _('Email (Opcional pero recomendado para recuperar contraseña)') }}</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ request.form.get('email', '') }}">
                 </div>
                 <div class="mb-3">
                     <label for="username_registro" class="form-label">{{ _('Usuario *') }}</label>
@@ -64,10 +68,14 @@
                     <input type="tel" class="form-control" id="telefono" name="telefono" value="{{ request.form.get('telefono', '') }}" required>
                 </div>
 
+                <!-- Campos extra (salud, emergencia, etc.) ELIMINADOS -->
+
                 <div class="d-grid gap-2 mt-4">
                     <button type="submit" class="btn btn-warning">{{ _('Registrarse') }}</button>
                 </div>
-                <p class="text-center mt-3">{{ _('¿Ya tienes una cuenta? ') }}<a href="{{ url_for('login') }}">{{ _('Inicia Sesión') }}</a></p>
+                
+                <!-- Actualizado: href="url_for('auth.login')" -->
+                <p class="text-center mt-3">{{ _('¿Ya tienes una cuenta? ') }}<a href="{{ url_for('auth.login') }}">{{ _('Inicia Sesión') }}</a></p>
             </form>
         </div>
     </div>

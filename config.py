@@ -11,20 +11,22 @@ class Config:
         'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'db.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Configuración para subida de archivos
-    UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'avatars')
-    PROJECT_IMAGE_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'projects')
-    NOTE_IMAGE_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'notes')
-    CAMINATA_IMAGE_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'caminatas')
-    PAGOS_IMAGE_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'pagos')
-    CALENDAR_IMAGE_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'calendar')
-    SONGS_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'songs')
-    PLAYLIST_COVER_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'playlists')
-    INSTRUCTION_ATTACHMENT_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'instructions')
-    MAP_FILES_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'maps')
-    COVERS_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'covers')
-    ABOUTUS_IMAGE_UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'aboutus')
-    UPLOAD_FILES_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'files')
+    # --- Implementando Optimización #5: Carpeta de Subida Única ---
+    UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads')
+    
+    # --- ELIMINADAS (ya no son necesarias) ---
+    # PROJECT_IMAGE_UPLOAD_FOLDER = ...
+    # NOTE_IMAGE_UPLOAD_FOLDER = ...
+    # CAMINATA_IMAGE_UPLOAD_FOLDER = ...
+    # PAGOS_IMAGE_UPLOAD_FOLDER = ...
+    # CALENDAR_IMAGE_UPLOAD_FOLDER = ...
+    # SONGS_UPLOAD_FOLDER = ...
+    # PLAYLIST_COVER_UPLOAD_FOLDER = ...
+    # INSTRUCTION_ATTACHMENT_FOLDER = ...
+    # MAP_FILES_UPLOAD_FOLDER = ...
+    # COVERS_UPLOAD_FOLDER = ...
+    # ABOUTUS_IMAGE_UPLOAD_FOLDER = ...
+    # UPLOAD_FILES_FOLDER = ...
 
 
     # Configuración de Flask-Mail para recuperación de contraseña
@@ -32,9 +34,6 @@ class Config:
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
     
-    # --- CAMBIO IMPORTANTE AQUÍ ---
-    # Se añade un valor por defecto para que la app no falle si no están las variables de entorno.
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'noreply@example.com')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or MAIL_USERNAME
-

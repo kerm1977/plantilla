@@ -4,14 +4,6 @@
 
 {% block head_content %}
 <style>
-    /* Estilos para la tarjeta de detalles del perfil - ELIMINADO
-    .profile-details-container {
-        padding: 2rem;
-        background-color: var(--bs-tertiary-bg);
-        border-radius: 12px;
-        border: 1px solid var(--bs-border-color);
-    }
-    */
     .dashboard-header {
         text-align: center;
         margin-bottom: 2rem;
@@ -92,8 +84,6 @@
     <div class="row justify-content-center">
         <div class="col-md-10 col-lg-9">
             
-            <!-- CONTENEDOR .profile-details-container ELIMINADO -->
-
             <!-- CABECERA DEL PERFIL -->
             <div class="dashboard-header">
                 <img src="{{ url_for('static', filename=user.avatar_url if user.avatar_url else 'uploads/avatars/default.png') }}" alt="{{ _('Avatar de %(username)s', username=user.username) }}" class="profile-avatar">
@@ -102,31 +92,14 @@
             </div>
 
             <!-- SECCIONES DE INFORMACIÓN DETALLADA -->
-            {% set sections = {
-                _("Información de Contacto"): [
-                    (_("Teléfono"), user.telefono), (_("Email"), user.email), (_("Empresa"), user.empresa),
-                    (_("Dirección (Provincia)"), user.direccion), (_("Rol"), user.role), (_("Cédula"), user.cedula)
-                ],
-                _("Información Adicional"): [
-                    (_("Fecha de Registro"), user.fecha_registro.strftime('%d/%m/%Y %H:%M') if user.fecha_registro else None),
-                    (_("Fecha de Cumpleaños"), user.fecha_cumpleanos.strftime('%d/%m/%Y') if user.fecha_cumpleanos else None)
-                ],
-                _("Información de Salud"): [
-                    (_("Tipo de Sangre"), user.tipo_sangre), (_("Póliza"), user.poliza), (_("Aseguradora"), user.aseguradora),
-                    (_("Alergias"), user.alergias), (_("Enfermedades Crónicas"), user.enfermedades_cronicas)
-                ],
-                _("Contacto de Emergencia"): [
-                    (_("Nombre"), user.nombre_emergencia), (_("Teléfono"), user.telefono_emergencia)
-                ]
-            } %}
-
+            <!-- Implementando Optimización #9: La variable 'sections' ahora viene de la ruta -->
             {% for title, items in sections.items() %}
-                <h4 class="section-title">{{ title }}</h4>
+                <h4 class="section-title">{{ _(title) }}</h4> {# Aplicar traducción aquí #}
                 <div class="row">
                     {% for label, value in items %}
                         {% if value %}
                         <div class="col-md-6 detail-item">
-                            <strong>{{ label }}:</strong>
+                            <strong>{{ _(label) }}:</strong> {# Aplicar traducción aquí #}
                             <span>{{ value }}</span>
                         </div>
                         {% endif %}
@@ -170,11 +143,8 @@
                 </div>
                 {% endif %}
             </div>
-            
-            <!-- CIERRE DEL CONTENEDOR ELIMINADO -->
 
         </div>
     </div>
 </div>
 {% endblock %}
-

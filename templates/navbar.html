@@ -2,7 +2,8 @@
     <div class="container-fluid">
         <!-- Contenedor para alinear logo y botón Cast -->
         <div class="navbar-brand-container d-flex align-items-center">
-            <a class="navbar-brand me-auto" href="{{ url_for('home') }}">TRANSAVI</a>
+            <!-- Actualizado: url_for('main.home') -->
+            <a class="navbar-brand me-auto" href="{{ url_for('main.home') }}">TRANSAVI</a>
             <google-cast-launcher class="ms-2"></google-cast-launcher>
         </div>
         
@@ -65,7 +66,8 @@
                     </li>
                     
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">
+                        <!-- Actualizado: url_for('auth.logout') -->
+                        <a class="nav-link" href="{{ url_for('auth.logout') }}">
                             <i class="fas fa-sign-out-alt icon-only-mobile"></i>
                             <span class="text-only-desktop">{{ _('Cerrar Sesión') }}</span>
                         </a>
@@ -73,7 +75,8 @@
                 {% else %}
 
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('login') }}">
+                        <!-- Actualizado: url_for('auth.login') -->
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
                             <i class="fas fa-user icon-only-mobile"></i>
                             <span class="text-only-desktop">{{ _('Iniciar Sesión') }}</span>
                         </a>
@@ -98,8 +101,8 @@ document.addEventListener('DOMContentLoaded', function() {
             let currentLang = document.documentElement.getAttribute('lang');
             let newLang = (currentLang === 'es') ? 'en' : 'es';
 
-            // Llama a la ruta de Flask para cambiar el idioma
-            fetch('/change_language/' + newLang)
+            // Actualizado: url_for('main.change_language', ...)
+            fetch("{{ url_for('main.change_language', lang='dummy') }}".replace('dummy', newLang))
                 .then(response => {
                     if (response.ok) {
                         window.location.reload();
@@ -123,8 +126,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const nextIndex = (currentIndex + 1) % themes.length;
             const newTheme = themes[nextIndex];
 
-            // Llama a la nueva ruta de Flask para cambiar el tema
-            fetch('/change_theme/' + newTheme)
+            // Actualizado: url_for('main.change_theme', ...)
+            fetch("{{ url_for('main.change_theme', theme='dummy') }}".replace('dummy', newTheme))
                 .then(response => {
                     if (response.ok) {
                         window.location.reload();

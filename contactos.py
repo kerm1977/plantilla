@@ -12,43 +12,23 @@ from functools import wraps
 import vobject
 import openpyxl
 
-AVATAR_UPLOAD_FOLDER_RELATIVE = os.path.join('uploads', 'avatars')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+# --- CORRECCIÓN #1 ---
+# Importar los decoradores centralizados y utilidades
+from app_utils import role_required, login_required, allowed_file
+# (Nota: 'allowed_file' también se movió a app_utils o se importó de allí)
 
-def allowed_file(filename):
-    """
-    Verifica si la extensión del archivo está permitida.
-    """
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Ruta relativa para la base de datos (relativa a 'static')
+AVATAR_UPLOAD_FOLDER_RELATIVE = os.path.join('uploads', 'avatars')
+# Se eliminan ALLOWED_EXTENSIONS y allowed_file, ya que se importan de app_utils
 
 
 # Creamos un Blueprint para organizar las rutas relacionadas con contactos
 contactos_bp = Blueprint('contactos', __name__, url_prefix='/contactos')
 
-# DECORADOR PARA ROLES
-def role_required(roles):
-    """
-    Decorador para restringir el acceso a rutas basadas en roles.
-    `roles` puede ser una cadena (un solo rol) o una lista de cadenas (múltiples roles).
-    """
-    if not isinstance(roles, list):
-        roles = [roles]
-
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if 'logged_in' not in session or not session['logged_in']:
-                flash('Por favor, inicia sesión para acceder a esta página.', 'info')
-                return redirect(url_for('login'))
-            
-            user_role = session.get('role')
-            if user_role not in roles:
-                flash('No tienes permiso para acceder a esta página.', 'danger')
-                return redirect(url_for('home')) # O a una página de "Acceso Denegado"
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
+# --- CORRECCIÓN #2 ---
+# Se ELIMINA la definición local del decorador 'role_required(roles): ...'
+# (Tus líneas 31-50) porque ahora se importa desde app_utils.
 
 
 @contactos_bp.route('/ver_contactos')
@@ -90,7 +70,10 @@ def ver_contactos():
                                user_count=user_count) # Pasar el contador al template
     except Exception as e:
         flash(f'Error al cargar los contactos: {e}', 'danger')
-        return redirect(url_for('home'))
+        
+        # --- CORRECCIÓN #3 (Línea 93 de tu traceback) ---
+        # Apuntar al blueprint 'main.home'
+        return redirect(url_for('main.home'))
 
 @contactos_bp.route('/ver_detalle/<int:user_id>')
 @role_required(['Superuser', 'Administrador', 'Usuario Regular']) # Todos pueden ver el detalle
@@ -108,7 +91,8 @@ def ver_detalle(user_id):
             avatar_url = url_for('static', filename=user.avatar_url)
     else:
         with current_app.app_context():
-            avatar_url = url_for('static', filename='images/defaults/default_avatar.png')
+            # Asumiendo una imagen por defecto en esta ruta
+            avatar_url = url_for('static', filename='uploads/avatars/default.png') 
 
     return render_template('detalle_contactos.html', user=user, avatar_url=avatar_url, current_role=session.get('role'))
 
@@ -137,14 +121,18 @@ def eliminar_contacto(user_id):
 
     try:
         # Opcional: Eliminar el archivo de avatar si no es el por defecto
-        if user_to_delete.avatar_url and 'default_avatar.png' not in user_to_delete.avatar_url:
-            file_path_check_1 = os.path.join(current_app.root_path, 'static', user_to_delete.avatar_url)
-            file_path_check_2 = os.path.join(current_app.root_path, user_to_delete.avatar_url)
+        # Usar la config['UPLOAD_FOLDER'] base
+        if user_to_delete.avatar_url and 'default.png' not in user_to_delete.avatar_url:
+            # user.avatar_url es 'uploads/avatars/filename.png'
+            # os.path.basename da 'filename.png'
+            # current_app.config['UPLOAD_FOLDER'] es '.../static/uploads'
+            
+            # Ruta correcta al archivo
+            avatar_filename = os.path.basename(user_to_delete.avatar_url)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars', avatar_filename)
 
-            if os.path.exists(file_path_check_1):
-                os.unlink(file_path_check_1)
-            elif os.path.exists(file_path_check_2):
-                os.unlink(file_path_check_2)
+            if os.path.exists(file_path):
+                os.unlink(file_path)
             # else: archivo no encontrado o ya eliminado, no hay problema
                 
 
@@ -173,8 +161,8 @@ def editar_contacto(user_id):
     # MODIFICACIÓN: Si es un usuario regular, solo puede editar su propio perfil
     if logged_in_user_role == 'Usuario Regular' and str(logged_in_user_id) != str(user_id):
         flash('No tienes permiso para editar el perfil de otro usuario.', 'danger')
-        # CORRECCIÓN: Cambiado 'perfil.ver_perfil' a 'perfil.perfil'
-        return redirect(url_for('perfil.perfil')) # Redirige a la página de perfil del propio usuario
+        # Apuntar al blueprint 'perfil.perfil'
+        return redirect(url_for('perfil.perfil')) 
 
     # DEFINICIÓN DE LAS OPCIONES: Añadidas aquí para que estén disponibles
     actividad_opciones = ["No Aplica", "La Tribu", "Senderista", "Enfermería", "Cocina", "Confección y Diseño", "Restaurante", "Transporte Terrestre", "Transporte Acuatico", "Transporte Aereo", "Migración", "Parque Nacional", "Refugio Silvestre", "Centro de Atracción", "Lugar para Caminata", "Acarreo", "Oficina de trámite", "Primeros Auxilios", "Farmacia", "Taller", "Abogado", "Mensajero", "Tienda", "Polizas", "Aerolínea", "Guía", "Banco", "Otros"]
@@ -265,33 +253,32 @@ def editar_contacto(user_id):
             user.alergias = request.form.get('alergias')
             user.enfermedades_cronicas = request.form.get('enfermedades_cronicas')
 
-            # Manejo del avatar - MODIFICACIÓN INICIA AQUÍ
+            # Manejo del avatar
             if 'avatar' in request.files:
                 file = request.files['avatar']
                 # Solo procesar si un archivo fue realmente seleccionado y es permitido
                 if file.filename != '' and allowed_file(file.filename):
                     # Eliminar el avatar anterior si no es el por defecto
-                    if user.avatar_url and 'default_avatar.png' not in user.avatar_url:
+                    if user.avatar_url and 'default.png' not in user.avatar_url:
                         old_avatar_filename = os.path.basename(user.avatar_url)
-                        old_avatar_path = os.path.join(current_app.config['UPLOAD_FOLDER'], old_avatar_filename)
+                        old_avatar_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars', old_avatar_filename)
                         
                         if os.path.exists(old_avatar_path):
                             os.unlink(old_avatar_path)
                     
-                    # Guardar el nuevo avatar con un nombre seguro
-                    filename = secure_filename(f"{user.username}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+                    # Guardar el nuevo avatar con un nombre seguro y único
+                    filename_base = secure_filename(file.filename)
+                    filename = f"{user.username}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename_base}"
                     
-                    # Usar la ruta de subida ABSOLUTA definida en app.py para guardar el archivo
-                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    # Usar la ruta de subida de avatares
+                    avatar_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars')
+                    os.makedirs(avatar_dir, exist_ok=True) # Asegurar que exista
+                    
+                    file_path = os.path.join(avatar_dir, filename)
                     file.save(file_path)
                     
                     # Guardar la ruta relativa correcta en la base de datos (relativa a la carpeta 'static')
                     user.avatar_url = os.path.join(AVATAR_UPLOAD_FOLDER_RELATIVE, filename).replace('\\', '/')
-                # Si file.filename está vacío (no se seleccionó un nuevo archivo),
-                # no hacemos nada con user.avatar_url, así se conserva el valor actual.
-                # La lógica que eliminaba el avatar y lo ponía por defecto si file.filename == ''
-                # ha sido eliminada para evitar la pérdida accidental del avatar.
-            # Manejo del avatar - MODIFICACIÓN TERMINA AQUÍ
 
             # Manejo del campo de rol (solo si el usuario logueado es Superuser)
             if logged_in_user_role == 'Superuser':
@@ -313,27 +300,22 @@ def editar_contacto(user_id):
                                                    role_opciones=role_opciones) # Pasa las opciones en caso de error
                     user.role = new_role
                 else:
-                    # Si el rol enviado no es válido o está vacío, no se actualiza.
-                    # Esto también maneja el caso de que un Superuser intente limpiar el campo de rol
-                    # para un Superuser, lo que podría reducir el conteo por debajo de 1.
-                    # Si el rol del usuario original es Superuser y se intenta cambiar a algo inválido,
-                    # se mantiene el rol actual.
                     pass
 
-            # CORRECCIÓN: Se elimina la línea que intenta actualizar un atributo inexistente
-            # user.fecha_actualizacion = datetime.utcnow()
-
+            # fecha_actualizacion se maneja automáticamente por onupdate=datetime.utcnow en models.py
             db.session.commit()
             flash('¡Contacto actualizado exitosamente!', 'success')
+            
             # Redirigir a perfil.perfil si el usuario editó su propio perfil
             if str(logged_in_user_id) == str(user_id):
-                return redirect(url_for('perfil.perfil')) # CORRECCIÓN APLICADA AQUÍ
+                return redirect(url_for('perfil.perfil')) 
             else:
                 return redirect(url_for('contactos.ver_detalle', user_id=user.id))
         except Exception as e:
             db.session.rollback()
             flash(f'Error al actualizar el contacto: {e}', 'danger')
-            # Si el error es de username duplicado, podríamos ser más específicos
+            current_app.logger.error(f"Error editando contacto {user_id}: {e}")
+            
             if 'UNIQUE constraint failed' in str(e) and 'username' in str(e):
                 flash('El nombre de usuario ya está en uso. Por favor, elige otro.', 'danger')
             if 'UNIQUE constraint failed' in str(e) and 'email' in str(e):
@@ -345,8 +327,8 @@ def editar_contacto(user_id):
                                    participacion_opciones=participacion_opciones,
                                    tipo_sangre_opciones=tipo_sangre_opciones,
                                    provincia_opciones=provincia_opciones,
-                                   logged_in_user_role=logged_in_user_role, # Pasa el rol para mostrar/ocultar el campo
-                                   role_opciones=role_opciones) # Pasa las opciones en caso de error
+                                   logged_in_user_role=logged_in_user_role, 
+                                   role_opciones=role_opciones) 
 
     # SI ES UN GET REQUEST: Asegurarse de pasar las opciones también
     avatar_url = None
@@ -355,7 +337,7 @@ def editar_contacto(user_id):
             avatar_url = url_for('static', filename=user.avatar_url)
     else:
         with current_app.app_context():
-            avatar_url = url_for('static', filename='images/defaults/default_avatar.png')
+            avatar_url = url_for('static', filename='uploads/avatars/default.png') # Ruta al default
 
     return render_template('editar_contacto.html', user=user, avatar_url=avatar_url,
                            actividad_opciones=actividad_opciones, 
@@ -376,21 +358,17 @@ def exportar_vcard(user_id):
     """
     user = User.query.get_or_404(user_id)
 
-    # Inicializar all_vcard_data antes del bloque try/except
     all_vcard_data = [] 
 
     try:
         card = vobject.vCard()
         
-        # Nombre
         card.add('n')
         card.n.value = vobject.vcard.Name(family=user.primer_apellido, given=user.nombre, additional=user.segundo_apellido if user.segundo_apellido else '')
         
-        # Nombre completo para pantalla
         card.add('fn')
         card.fn.value = f"{user.nombre} {user.primer_apellido} {user.segundo_apellido if user.segundo_apellido else ''}".strip()
 
-        # Teléfono
         if user.telefono:
             tel = card.add('tel')
             tel.type_param = 'CELL'
@@ -414,26 +392,22 @@ def exportar_vcard(user_id):
         if user.empresa:
             card.add('org').value = user.empresa
 
-        # Otros campos que puedan tener sentido en un vCard (ej. TÍTULO, NOTAS, etc.)
         if user.actividad:
             card.add('title').value = user.actividad
         if user.cedula:
-            # Se añade el rol al campo NOTE del vCard
             card.add('note').value = f"Cédula: {user.cedula}, Rol: {user.role}" 
         
-        if user.avatar_url and 'default_avatar.png' not in user.avatar_url:
+        if user.avatar_url and 'default.png' not in user.avatar_url:
             with current_app.app_context():
                 full_avatar_url = url_for('static', filename=user.avatar_url, _external=True)
                 photo = card.add('photo')
                 photo.value = full_avatar_url
                 photo.type_param = 'URI'
 
-        # CORRECCIÓN: Se elimina la referencia a fecha_actualizacion
+        # fecha_actualizacion se maneja en el modelo
         
-        # Serializa cada vCard y añádelo a la lista
         all_vcard_data.append(card.serialize())
             
-        # Une todas las vCards en una sola cadena
         final_vcf_content = "\n".join(all_vcard_data)
 
         buffer = io.BytesIO(final_vcf_content.encode('utf-8'))
@@ -460,14 +434,9 @@ def exportar_excel(user_id):
     sheet = workbook.active
     sheet.title = "Detalles de Contacto"
 
-    # Encabezados
-    headers = [
-        "Campo", "Valor"
-    ]
+    headers = [ "Campo", "Valor" ]
     sheet.append(headers)
 
-    # Datos del usuario
-    # Convertimos los campos a string para evitar problemas de formato en Excel
     data = [
         ("Nombre de Usuario", str(user.username)),
         ("Nombre", str(user.nombre)),
@@ -484,8 +453,7 @@ def exportar_excel(user_id):
         ("Capacidad", str(user.capacidad) if user.capacidad else ""),
         ("Participación", str(user.participacion) if user.participacion else ""),
         ("Fecha de Registro", user.fecha_registro.strftime('%d/%m/%Y %H:%M')),
-        # CORRECCIÓN: Se elimina la referencia a fecha_actualizacion
-        ("Rol", str(user.role)) # Añadir el rol al Excel
+        ("Rol", str(user.role))
     ]
 
     for row_data in data:
@@ -493,7 +461,7 @@ def exportar_excel(user_id):
 
     buffer = io.BytesIO()
     workbook.save(buffer)
-    buffer.seek(0) # Regresar al inicio del buffer para que send_file pueda leerlo
+    buffer.seek(0) 
 
     return send_file(
         buffer,
@@ -515,15 +483,12 @@ def exportar_todos_excel():
         sheet = workbook.active
         sheet.title = "Todos los Contactos"
 
-        # Encabezados de las columnas para el formato de lista, según lo solicitado.
         headers = [
             "Nombre", "Primer Apellido", "Segundo Apellido", "Cédula", "Email"
         ]
         sheet.append(headers)
 
-        # Iterar sobre cada usuario y añadir sus datos como una fila
         for user in all_users:
-            # Se ajustan los datos para que coincidan con los nuevos encabezados.
             row_data = [
                 str(user.nombre),
                 str(user.primer_apellido),
@@ -555,13 +520,11 @@ def exportar_todos_vcard():
     """
     Exporta los datos de TODOS los contactos a un archivo VCard (.vcf) consolidado.
     """
-    # Inicializar all_vcard_data antes del bloque try/except
     all_vcard_data = [] 
 
     try:
         all_users = User.query.all()
         
-
         for user in all_users:
             card = vobject.vCard()
             
@@ -597,22 +560,17 @@ def exportar_todos_vcard():
             if user.actividad:
                 card.add('title').value = user.actividad
             if user.cedula:
-                # Se añade el rol al campo NOTE del vCard
                 card.add('note').value = f"Cédula: {user.cedula}, Rol: {user.role}" 
             
-            if user.avatar_url and 'default_avatar.png' not in user.avatar_url:
+            if user.avatar_url and 'default.png' not in user.avatar_url:
                 with current_app.app_context():
                     full_avatar_url = url_for('static', filename=user.avatar_url, _external=True)
                     photo = card.add('photo')
                     photo.value = full_avatar_url
                     photo.type_param = 'URI'
-
-            # CORRECCIÓN: Se elimina la referencia a fecha_actualizacion
             
-            # Serializa cada vCard y añádelo a la lista
             all_vcard_data.append(card.serialize())
         
-        # Une todas las vCards en una sola cadena
         final_vcf_content = "\n".join(all_vcard_data)
 
         buffer = io.BytesIO(final_vcf_content.encode('utf-8'))
@@ -705,7 +663,7 @@ def admin_manage_roles():
         ).order_by(User.username.asc()).all()
     else:
         # Si no hay búsqueda, no mostrar usuarios regulares por defecto en esta sección
-        # o mostrar un número limitado si se desea (aquí no los mostraremos para mantener la separación)
-        pass # No fetch all regular users by default
+        pass 
 
     return render_template('admin_roles.html', admin_users=admin_users, regular_users=regular_users, search_query_regular=search_query_regular)
+
