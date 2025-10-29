@@ -15,7 +15,6 @@ import openpyxl
 # --- CORRECCIÓN #1 ---
 # Importar los decoradores centralizados y utilidades
 from app_utils import role_required, login_required, allowed_file
-# (Nota: 'allowed_file' también se movió a app_utils o se importó de allí)
 
 
 # Ruta relativa para la base de datos (relativa a 'static')
@@ -70,6 +69,7 @@ def ver_contactos():
                                user_count=user_count) # Pasar el contador al template
     except Exception as e:
         flash(f'Error al cargar los contactos: {e}', 'danger')
+        current_app.logger.error(f"Error al cargar contactos: {e}")
         
         # --- CORRECCIÓN #3 (Línea 93 de tu traceback) ---
         # Apuntar al blueprint 'main.home'
