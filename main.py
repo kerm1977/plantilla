@@ -2,9 +2,9 @@
 # Un nuevo Blueprint para las rutas generales que no son de un módulo específico, como la página de inicio (/) y los cambiadores de tema e idioma
 
 from flask import (
-    Blueprint, render_template, redirect, url_for, session, jsonify
+    Blueprint, render_template, redirect, url_for, session, jsonify, current_app
 )
-from models import db, User
+from models import db, User # Asegúrate de que User y db estén importados
 
 # Crear el Blueprint principal
 main_bp = Blueprint('main', __name__)
@@ -12,8 +12,9 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 @main_bp.route('/home')
 def home():
-    # Redirige a la página 'Acerca de nosotros' como la nueva página de inicio
-    return redirect(url_for('aboutus.ver_aboutus'))
+    # Renderiza la plantilla 'home.html' directamente
+    # Si usas _() para traducción, asegúrate de que esté disponible
+    return render_template('home.html')
 
 @main_bp.route('/change_theme/<theme>')
 def change_theme(theme):
@@ -22,6 +23,7 @@ def change_theme(theme):
         session['theme'] = theme
         if 'user_id' in session:
             try:
+                # current_app debe importarse si se usa fuera de un contexto directo
                 user = User.query.get(session['user_id'])
                 if user:
                     user.theme = theme
@@ -36,8 +38,8 @@ def change_theme(theme):
 @main_bp.route('/change_language/<lang>')
 def change_language(lang):
     """Actualiza el idioma en la sesión."""
-    LANGUAGES = ['es', 'en'] # Mover a config si es necesario
+    # Asegúrate de importar 'current_app' si es necesario
+    LANGUAGES = current_app.config.get('BABEL_LANGUAGES', ['es', 'en'])
     if lang in LANGUAGES:
         session['lang'] = lang
-    # El JS ahora maneja la recarga, solo devolvemos éxito
     return jsonify(success=True)
